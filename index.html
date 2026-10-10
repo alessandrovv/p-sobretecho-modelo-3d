@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sobrecubierta provisional · terraza 3D</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="panel panel-config" id="panel-config" aria-label="Configuración">
+        <header class="panel-cabecera">
+          <h1>Sobrecubierta provisional</h1>
+          <p>Terraza de concreto · modelo de estudio, no de obra</p>
+          <button type="button" class="cerrar-panel" data-cerrar="panel-config" aria-label="Cerrar panel">×</button>
+        </header>
+
+        <section class="bloque">
+          <h2>Alternativa</h2>
+          <div id="alternativas" class="lista-alternativas"></div>
+          <div class="fila-botones">
+            <button type="button" id="btn-comparar">Comparar alternativas</button>
+            <button type="button" id="btn-materiales">Evaluación de materiales</button>
+          </div>
+        </section>
+
+        <section class="bloque">
+          <h2>Cubierta</h2>
+          <label class="campo">Material
+            <select data-param="material" id="sel-material"></select>
+          </label>
+          <label class="campo">Régimen de lluvias
+            <select data-param="regimen" id="sel-regimen"></select>
+          </label>
+          <label class="campo">Planchas traslúcidas
+            <select data-param="traslucidas" id="sel-traslucidas"></select>
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Pendiente y alturas</h2>
+          <label class="campo">Dirección de caída
+            <select data-param="direccion" id="sel-direccion"></select>
+          </label>
+          <label class="campo rango">Pendiente <output data-salida="pendiente"></output>
+            <input type="range" data-param="pendiente" data-unidad="%" data-dec="1" min="1" max="45" step="0.5" />
+          </label>
+          <label class="campo rango">Altura de inicio (borde alto) <output data-salida="alturaInicio"></output>
+            <input type="range" data-param="alturaInicio" data-unidad="m" min="2.4" max="5" step="0.01" />
+          </label>
+          <div class="campo calculado">Altura final calculada <strong id="out-altura-final">—</strong></div>
+          <label class="campo rango">Altura libre mínima (criterio provisional) <output data-salida="alturaLibreMin"></output>
+            <input type="range" data-param="alturaLibreMin" data-unidad="m" min="1.9" max="2.6" step="0.05" />
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Dimensiones</h2>
+          <label class="campo rango">Ancho <output data-salida="ancho"></output>
+            <input type="range" data-param="ancho" data-unidad="m" min="4" max="8" step="0.05" />
+          </label>
+          <label class="campo rango">Largo <output data-salida="largo"></output>
+            <input type="range" data-param="largo" data-unidad="m" min="6" max="14" step="0.05" />
+          </label>
+          <label class="campo rango">Voladizo frontal <output data-salida="voladizoFrontal"></output>
+            <input type="range" data-param="voladizoFrontal" data-unidad="m" min="0" max="0.8" step="0.05" />
+          </label>
+          <label class="campo rango">Voladizo lateral (lado del parapeto) <output data-salida="voladizoLateral"></output>
+            <input type="range" data-param="voladizoLateral" data-unidad="m" min="0" max="0.4" step="0.01" />
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Encuentro con el sobretecho existente</h2>
+          <label class="campo rango">Solape del encuentro <output data-salida="solape"></output>
+            <input type="range" data-param="solape" data-unidad="m" min="0.05" max="0.8" step="0.01" />
+          </label>
+          <label class="campo casilla"><input type="checkbox" data-param="conExtension" /> Extensión trasera de la cubierta (solo planchas, por encima del existente)</label>
+          <label class="campo rango">Largo de la extensión trasera <output data-salida="extensionTrasera"></output>
+            <input type="range" data-param="extensionTrasera" data-unidad="m" min="0.3" max="1" step="0.05" />
+          </label>
+          <label class="campo rango">Altura inicio existente <output data-salida="alturaInicioExistente"></output>
+            <input type="range" data-param="alturaInicioExistente" data-unidad="m" min="3.6" max="4.6" step="0.01" />
+          </label>
+          <label class="campo rango">Altura borde bajo existente <output data-salida="alturaBordeExistente"></output>
+            <input type="range" data-param="alturaBordeExistente" data-unidad="m" min="3.0" max="4.0" step="0.01" />
+          </label>
+          <label class="campo rango">Fondo del existente (estimado) <output data-salida="fondoExistente"></output>
+            <input type="range" data-param="fondoExistente" data-unidad="m" min="1.5" max="6" step="0.05" />
+          </label>
+          <label class="campo rango">Peralte del borde existente (estimado) <output data-salida="peralteBordeExistente"></output>
+            <input type="range" data-param="peralteBordeExistente" data-unidad="m" min="0.08" max="0.4" step="0.01" />
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Drenaje</h2>
+          <label class="campo">Bajantes del canalón
+            <select data-param="bajantes" id="sel-bajantes"></select>
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Estructura <span class="insignia insignia-provisional">provisional</span></h2>
+          <label class="campo rango">Vanos entre pórticos <output data-salida="vanos"></output>
+            <input type="range" data-param="vanos" data-dec="0" min="3" max="8" step="1" />
+          </label>
+          <label class="campo rango">Peralte del tijeral <output data-salida="peralteTijeral"></output>
+            <input type="range" data-param="peralteTijeral" data-unidad="m" min="0.25" max="0.8" step="0.01" />
+          </label>
+          <label class="campo rango">Separación de correas <output data-salida="separacionCorreas"></output>
+            <input type="range" data-param="separacionCorreas" data-unidad="m" min="0.5" max="2.5" step="0.05" />
+          </label>
+          <label class="campo rango">Muro izquierdo (estimado) <output data-salida="alturaMuroIzquierdo"></output>
+            <input type="range" data-param="alturaMuroIzquierdo" data-unidad="m" min="2" max="4.5" step="0.05" />
+          </label>
+          <label class="campo rango">Parapetos (estimado) <output data-salida="alturaParapeto"></output>
+            <input type="range" data-param="alturaParapeto" data-unidad="m" min="0.6" max="1.6" step="0.05" />
+          </label>
+        </section>
+
+        <section class="bloque">
+          <h2>Visibilidad</h2>
+          <div class="interruptores">
+            <label><input type="checkbox" data-capa="cubierta" checked /> Cubierta</label>
+            <label><input type="checkbox" data-capa="estructura" checked /> Estructura de madera</label>
+            <label><input type="checkbox" data-capa="drenaje" checked /> Canalones y bajantes</label>
+            <label><input type="checkbox" data-capa="existente" checked /> Sobretecho existente</label>
+            <label><input type="checkbox" data-capa="muros" checked /> Muros y losa</label>
+            <label><input type="checkbox" data-capa="cotas" checked /> Cotas</label>
+            <label><input type="checkbox" data-capa="etiquetas" checked /> Etiquetas</label>
+            <label><input type="checkbox" data-capa="agua" checked /> Flujo de agua</label>
+          </div>
+          <label class="interruptor-grande"><input type="checkbox" data-capa="expuesto" /> Modo estructura expuesta</label>
+        </section>
+
+        <div class="fila-botones">
+          <button type="button" id="btn-restablecer">Restablecer parámetros</button>
+        </div>
+      </aside>
+
+      <main class="visor">
+        <div id="viewport" aria-label="Modelo 3D"></div>
+        <nav class="barra-vistas" aria-label="Vistas">
+          <button type="button" class="solo-movil" data-abrir="panel-config">Configurar</button>
+          <button type="button" data-vista="iso" class="activa" title="Vista inicial (R)">Isométrica</button>
+          <button type="button" data-vista="frontal">Frontal</button>
+          <button type="button" data-vista="posterior">Posterior</button>
+          <button type="button" data-vista="izquierda">Izquierda</button>
+          <button type="button" data-vista="derecha">Derecha</button>
+          <button type="button" data-vista="superior">Superior</button>
+          <button type="button" data-vista="encuentro">Encuentro</button>
+          <button type="button" data-vista="interior">Desde abajo</button>
+          <button type="button" class="solo-movil" data-abrir="panel-informe">Resultados</button>
+        </nav>
+        <div class="estado-flotante" id="estado-flotante"></div>
+        <div class="leyenda" aria-label="Leyenda">
+          <span><i style="background:#b08550"></i>Madera tratada</span>
+          <span><i style="background:#c5cad0"></i>Plancha opaca</span>
+          <span><i style="background:#dff0ff;border:1px solid #9bb"></i>Traslúcida</span>
+          <span><i style="background:#5f7f9c"></i>Remates y baberos</span>
+          <span><i style="background:#8d949a"></i>Existente</span>
+          <span><i style="background:#1e88e5"></i>Agua</span>
+        </div>
+      </main>
+
+      <aside class="panel panel-informe" id="panel-informe" aria-label="Resultados">
+        <button type="button" class="cerrar-panel" data-cerrar="panel-informe" aria-label="Cerrar panel">×</button>
+        <div id="informe"></div>
+      </aside>
+    </div>
+
+    <dialog id="dlg-comparar" class="dialogo">
+      <form method="dialog" class="dialogo-cabecera">
+        <h2>Comparación de alternativas</h2>
+        <button aria-label="Cerrar">×</button>
+      </form>
+      <p class="nota">Todas conservan las dimensiones, alturas y encuentro configurados en el panel; solo cambian material, dirección de caída, pendiente y traslúcidas.</p>
+      <div id="tabla-comparar" class="tabla-scroll"></div>
+    </dialog>
+
+    <dialog id="dlg-materiales" class="dialogo">
+      <form method="dialog" class="dialogo-cabecera">
+        <h2>Evaluación de materiales de cubierta</h2>
+        <button aria-label="Cerrar">×</button>
+      </form>
+      <div id="tabla-materiales" class="tabla-scroll"></div>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

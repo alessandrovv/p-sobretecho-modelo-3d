@@ -1,0 +1,45 @@
+name: Desplegar en Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
+env:
+  PROYECTO_PAGES: sobretecho-3d
+
+jobs:
+  deploy:
+    name: Desplegar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Buildear la aplicación
+        run: npm run build
+
+      - name: Desplegar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          # Crea el proyecto la primera vez; en los siguientes despliegues falla porque ya existe.
+          preCommands: wrangler pages project create ${{ env.PROYECTO_PAGES }} --production-branch=main || true
+          command: pages deploy ./dist --project-name=${{ env.PROYECTO_PAGES }} --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
