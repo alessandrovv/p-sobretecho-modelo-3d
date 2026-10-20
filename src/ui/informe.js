@@ -1,5 +1,6 @@
-import { ALTERNATIVAS, EVALUACION_MATERIALES, FUENTES, MATERIALES, SECCIONES, PATRONES_TRASLUCIDAS } from '../config/proyecto.js';
+import { ALTERNATIVAS, EVALUACION_MATERIALES, FUENTES, MATERIALES, PATRONES_TRASLUCIDAS } from '../config/proyecto.js';
 import { calcularProyecto, resumenAlternativa } from '../calc/geometria.js';
+import { listarMateriales, listaComoTSV } from '../calc/listaMateriales.js';
 import { alternativaActiva } from './panel.js';
 
 const f2 = (v) => v.toFixed(2);
@@ -37,26 +38,60 @@ export function renderInforme(r, contenedor) {
   const okLibre = r.alturaLibreEstructura >= p.alturaLibreMin;
   const fuente = FUENTES[mat.fuente];
 
-  const componentes = [
-    `${r.conteos.postes} postes de madera ${SECCIONES.poste.texto} sobre base metálica en U con anclaje (diseño de anclaje pendiente)`,
-    `${r.conteos.tijerales} tijerales de cordones paralelos (cordones ${SECCIONES.cordon.texto}, celosía ${SECCIONES.diagonal.texto}), peralte ${f2(r.peralte)} m`,
-    `2 vigas de amarre longitudinales ${SECCIONES.vigaAmarre.texto} con pies de amigo y cruces de San Andrés en los vanos extremos`,
-    r.esLong ? `${r.conteos.largueros} largueros inclinados ${SECCIONES.larguero.texto}` : null,
-    `${r.conteos.correas} líneas de correas ${SECCIONES.correa.texto} (≈${r.conteos.longitudCorreas.toFixed(0)} m lineales, medida geométrica)`,
-    'Flejes cruzados en el plano de cubierta (vanos extremos) y cartelas metálicas con pernos en los nudos',
-    `${r.nPlanchas} filas de plancha (${r.nTraslucidas} traslúcidas), ${r.traslapesTransversales} traslapes transversales`,
-    `${r.nFijaciones} fijaciones en cresta sobre correa`,
-    'Remates de borde, remate de borde alto y tapacanes',
-    `${MODOS_ENCUENTRO[r.modoEncuentro]} en el encuentro con el sobretecho existente`,
-    r.extension.aplicada ? `Extensión trasera de ${f2(r.extension.aplicada)} m: solo planchas sobre correas en voladizo, con remate en el borde alto` : null,
-    `Canalón ${r.esLong ? 'frontal' : 'lateral'} de ≈${f2(r.canalon.longitud)} m y ${r.canalon.bajantes.length} bajante(s) PVC ≈3"`,
-    r.longitudBaberoMuro > 0 ? `Babero contra muro ≈${f2(r.longitudBaberoMuro)} m (fijación no estructural)` : null,
-  ].filter(Boolean);
+  const S = r.secciones;
+  const infoEst = r.tipoEstructuraInfo;
+  const componentes = r.esMetalSimple
+    ? [
+        `${r.conteos.postes} postes ${S.poste.texto} con placa base; vigas soldadas en cabeza (sin amarre lateral)`,
+        r.esLong
+          ? `Vigas inclinadas ${S.larguero.texto} soldadas a postes + viga de borde frontal ${S.cordon.texto}`
+          : `${r.conteos.tijerales} vigas de pórtico ${S.cordon.texto} soldadas a cada par de postes`,
+        `Diagonales ${S.riostra.texto} en vanos extremos + flejes de cubierta (arriostramiento crítico en V3)`,
+        `${r.conteos.correas} líneas de correas ${S.correa.texto} (≈${r.conteos.longitudCorreas.toFixed(0)} m lineales)`,
+        `${r.nPlanchas} filas de plancha (${r.nTraslucidas} traslúcidas), ${r.traslapesTransversales} traslapes transversales`,
+        `${r.nFijaciones} fijaciones en cresta sobre correa`,
+        `Remates (${S.tapacan.texto})`,
+        `${MODOS_ENCUENTRO[r.modoEncuentro]} en el encuentro con el sobretecho existente`,
+        r.extension.aplicada ? `Extensión trasera de ${f2(r.extension.aplicada)} m` : null,
+        `Canalón ${r.esLong ? 'frontal' : 'lateral'} ≈${f2(r.canalon.longitud)} m · ${r.canalon.bajantes.length} bajante(s)`,
+        r.longitudBaberoMuro > 0 ? `Babero contra muro ≈${f2(r.longitudBaberoMuro)} m` : null,
+      ].filter(Boolean)
+    : r.esMetal
+    ? [
+        `${r.conteos.postes} postes ${S.poste.texto} sobre placa base 200×200×8 mm con anclaje (diseño pendiente)`,
+        `${r.conteos.tijerales} vigas de pórtico transversales ${S.cordon.texto} (sin tijeral profundo; canto ${f2(r.peralte)} m)`,
+        `2 vigas de amarre longitudinales ${S.vigaAmarre.texto} con pies de amigo ${S.pieDeAmigo.texto} y cruces ${S.riostra.texto}`,
+        r.esLong ? `${r.conteos.largueros} vigas inclinadas ${S.larguero.texto}` : null,
+        `${r.conteos.correas} líneas de correas ${S.correa.texto} (≈${r.conteos.longitudCorreas.toFixed(0)} m lineales)`,
+        'Flejes de arriostramiento en el plano de cubierta y cartelas en los nudos',
+        `${r.nPlanchas} filas de plancha (${r.nTraslucidas} traslúcidas), ${r.traslapesTransversales} traslapes transversales`,
+        `${r.nFijaciones} fijaciones en cresta sobre correa`,
+        `Remates de borde (${S.tapacan.texto})`,
+        `${MODOS_ENCUENTRO[r.modoEncuentro]} en el encuentro con el sobretecho existente`,
+        r.extension.aplicada ? `Extensión trasera de ${f2(r.extension.aplicada)} m: solo planchas sobre correas en voladizo` : null,
+        `Canalón ${r.esLong ? 'frontal' : 'lateral'} de ≈${f2(r.canalon.longitud)} m y ${r.canalon.bajantes.length} bajante(s) PVC ≈3"`,
+        r.longitudBaberoMuro > 0 ? `Babero contra muro ≈${f2(r.longitudBaberoMuro)} m` : null,
+      ].filter(Boolean)
+    : [
+        `${r.conteos.postes} postes de madera ${S.poste.texto} sobre base metálica en U con anclaje (diseño pendiente)`,
+        `${r.conteos.tijerales} tijerales de cordones paralelos (cordones ${S.cordon.texto}, celosía ${S.diagonal.texto}), peralte ${f2(r.peralte)} m`,
+        `2 vigas de amarre longitudinales ${S.vigaAmarre.texto} con pies de amigo y cruces de San Andrés`,
+        r.esLong ? `${r.conteos.largueros} largueros inclinados ${S.larguero.texto}` : null,
+        `${r.conteos.correas} líneas de correas ${S.correa.texto} (≈${r.conteos.longitudCorreas.toFixed(0)} m lineales)`,
+        'Flejes cruzados en el plano de cubierta y cartelas metálicas con pernos',
+        `${r.nPlanchas} filas de plancha (${r.nTraslucidas} traslúcidas), ${r.traslapesTransversales} traslapes transversales`,
+        `${r.nFijaciones} fijaciones en cresta sobre correa`,
+        'Remates de borde y tapacanes',
+        `${MODOS_ENCUENTRO[r.modoEncuentro]} en el encuentro con el sobretecho existente`,
+        r.extension.aplicada ? `Extensión trasera de ${f2(r.extension.aplicada)} m` : null,
+        `Canalón ${r.esLong ? 'frontal' : 'lateral'} de ≈${f2(r.canalon.longitud)} m y ${r.canalon.bajantes.length} bajante(s)`,
+        r.longitudBaberoMuro > 0 ? `Babero contra muro ≈${f2(r.longitudBaberoMuro)} m` : null,
+      ].filter(Boolean);
 
   contenedor.innerHTML = `
   <div class="informe">
     <h2>${esc(alt ? alt.titulo : 'Configuración personalizada')}</h2>
-    <p class="subtitulo">${esc(mat.nombre)} · ${esc(r.direccion.nombre)}</p>
+    <p class="subtitulo">${esc(r.tipoEstructuraInfo.nombre)} · ${esc(mat.nombre)} · ${esc(r.direccion.nombre)}</p>
 
     <h3>Conflictos y avisos</h3>
     <ul class="advertencias">
@@ -71,7 +106,7 @@ export function renderInforme(r, contenedor) {
       ${fila('Altura de inicio (borde alto)', `${f2(p.alturaInicio)} m`, 'est')}
       ${fila('Altura final', `${f2(r.alturaFinal)} m`, 'calc', r.alturaBajoPlanchaFinal < p.alturaLibreMin ? 'mal' : '')}
       ${fila('Altura en el alero (con voladizo)', `${f2(r.alturaAleroReal)} m`, 'calc')}
-      ${fila('Altura libre bajo tijerales (mínima)', `${f2(r.alturaLibreEstructura)} m`, 'calc', okLibre ? 'bien' : 'mal')}
+      ${fila(r.esMetal ? 'Altura libre bajo vigas (mínima)' : 'Altura libre bajo tijerales (mínima)', `${f2(r.alturaLibreEstructura)} m`, 'calc', okLibre ? 'bien' : 'mal')}
       ${fila('Altura libre mínima exigida', `${f2(p.alturaLibreMin)} m`, 'prov')}
       ${fila('Plancha en la pendiente', `${f2(r.U)} m`, 'calc')}
       ${fila('Superficie en planta', `${r.areaPlanta.toFixed(1)} m²`, 'calc')}
@@ -92,12 +127,21 @@ export function renderInforme(r, contenedor) {
 
     <h3>Estructura</h3>
     <table class="tabla-valores">
+      ${fila('Tipo', esc(infoEst.nombre), 'calc')}
       ${fila('Pórticos / separación', `${r.porticos.length} / ${f2(r.separacionPorticos)} m`, 'prov')}
       ${fila('Correas / separación en la pendiente', `${r.correasR.length} / ${f2(r.sepCorreasReal)} m`, 'prov')}
-      ${fila('Peralte del tijeral', `${f2(r.peralte)} m`, 'prov')}
+      ${fila(r.esMetal ? 'Canto de viga principal' : 'Peralte del tijeral', `${f2(r.peralte)} m`, 'prov')}
+      ${fila('Poste', esc(S.poste.texto), 'prov')}
+      ${fila('Correa', esc(S.correa.texto), 'prov')}
       ${fila('Drenaje', textoDrenaje(r), 'calc')}
       ${fila('Traslúcidas', `${r.nTraslucidas} de ${r.nPlanchas} (${PATRONES_TRASLUCIDAS[mat.traslucida ? p.traslucidas : 'ninguna'].toLowerCase()})`, 'calc')}
     </table>
+    ${
+      infoEst.ventajas
+        ? `<h3>Ventajas de ${esc(infoEst.corto)}</h3><ul class="lista">${infoEst.ventajas.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
+           <h3>Desventajas / cuidados</h3><ul class="lista">${infoEst.limitaciones.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>`
+        : ''
+    }
 
     <h3>Ficha del material</h3>
     <table class="tabla-valores">
@@ -129,6 +173,83 @@ export function renderInforme(r, contenedor) {
     <ul class="lista">${componentes.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
     <p class="nota">Conteo geométrico del modelo: <b>no es una lista de corte ni un presupuesto</b>. Las secciones, separaciones y anclajes son provisionales hasta el cálculo estructural (incluida succión de viento). ${errores ? `Hay ${errores} conflicto(s) sin resolver.` : ''}</p>
   </div>`;
+}
+
+/** Pestaña «Lista de compra»: cantidades y medidas para cotizar. */
+export function renderListaCompra(r, contenedor) {
+  const lista = listarMateriales(r);
+  const { resumen: s } = lista;
+  const filas = (items) =>
+    items
+      .map(
+        (it) => `<tr>
+      <td class="codigo">${esc(it.codigo)}</td>
+      <td>
+        <strong>${esc(it.descripcion)}</strong>
+        <div class="esp">${esc(it.especificacion)}</div>
+        <div class="det">${esc(it.detalle)}</div>
+        ${it.nota ? `<div class="nota-item">${esc(it.nota)}</div>` : ''}
+      </td>
+      <td class="cant">${esc(String(it.cantidad))}</td>
+      <td>${esc(it.unidad)}</td>
+      <td>${insignia(it.origen === 'ficha' ? 'ficha' : it.origen === 'prov' ? 'prov' : 'calc')}</td>
+    </tr>`,
+      )
+      .join('');
+
+  contenedor.innerHTML = `
+  <div class="informe lista-compra">
+    <h2>Lista de compra</h2>
+    <p class="subtitulo">${esc(s.tipoEstructura)} · ${esc(s.materialCubierta)}</p>
+    <p class="nota">${esc(lista.aviso)}</p>
+
+    <div class="resumen-compra">
+      <span>Área planta <b>${s.areaPlanta.toFixed(1)} m²</b></span>
+      <span>Cubierta inclinada <b>${s.areaInclinada.toFixed(1)} m²</b></span>
+      <span>Postes <b>${s.nPostes}</b></span>
+      <span>Correas <b>${s.nCorreas}</b></span>
+      <span>Planchas <b>${s.nPlanchas}</b> (${s.nTraslucidas} traslúcidas)</span>
+      <span>Fijaciones <b>${s.nFijaciones}</b></span>
+    </div>
+
+    <div class="fila-botones">
+      <button type="button" id="btn-copiar-lista">Copiar para Excel (TSV)</button>
+    </div>
+
+    ${lista.categorias
+      .map(
+        (cat) => `
+      <h3>${esc(cat.titulo)}</h3>
+      <table class="tabla-compra">
+        <thead><tr><th>Cód.</th><th>Material</th><th>Cant.</th><th>Unidad</th><th></th></tr></thead>
+        <tbody>${filas(cat.items)}</tbody>
+      </table>`,
+      )
+      .join('')}
+
+    <p class="nota">Total de renglones: ${lista.totalItems}. Las barras se redondean a múltiplos de 6 m (largo comercial habitual). Pedir un 5–10 % extra de tornillería y sellos.</p>
+  </div>`;
+
+  contenedor.querySelector('#btn-copiar-lista')?.addEventListener('click', async () => {
+    const tsv = listaComoTSV(lista);
+    try {
+      await navigator.clipboard.writeText(tsv);
+      const b = contenedor.querySelector('#btn-copiar-lista');
+      if (b) {
+        const t = b.textContent;
+        b.textContent = 'Copiado';
+        setTimeout(() => {
+          b.textContent = t;
+        }, 1600);
+      }
+    } catch {
+      // Fallback: descarga
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([tsv], { type: 'text/tab-separated-values' }));
+      a.download = 'lista-compra-sobrecubierta.tsv';
+      a.click();
+    }
+  });
 }
 
 /** Resumen flotante sobre el visor. */

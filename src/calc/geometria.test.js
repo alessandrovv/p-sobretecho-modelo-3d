@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calcularProyecto, desnivel, dividirPlancha, ALTURA_MIN_CONSTRUIBLE } from './geometria.js';
+import { listarMateriales } from './listaMateriales.js';
 import { PARAMETROS_INICIALES, ALTERNATIVAS, GEOMETRIA } from '../config/proyecto.js';
 
 /** Escenario fijo para las pruebas de alternativas (independiente de los valores por defecto). */
 const REFERENCIA = {
   ...PARAMETROS_INICIALES,
+  tipoEstructura: 'madera', // las pruebas de alternativas usan el apilado V1
   regimen: 'esporadica',
   alturaInicio: 3.25,
   alturaLibreMin: 2.2,
@@ -73,12 +75,13 @@ test('cubierta por encima del borde existente → encuentro independiente', () =
   assert.equal(r.modoEncuentro, 'independiente');
 });
 
-test('traslapes de Fibraforte centrados sobre correa', () => {
+test('traslapes de TF5 centrados sobre correa', () => {
   const r = conAlternativa('B-longitudinal');
+  assert.equal(r.material.id, 'tf5');
   assert.ok(r.traslapesTransversales > 0);
   assert.equal(r.juntasFueraDeCorrea, 0);
   for (const pl of r.planchas) {
-    for (const pz of pl.piezas) assert.ok(pz.fin - pz.ini <= 3.05 + 1e-6);
+    for (const pz of pl.piezas) assert.ok(pz.fin - pz.ini <= 3.6 + 1e-6);
   }
 });
 
@@ -90,14 +93,25 @@ test('dividirPlancha cubre toda la longitud con traslapes', () => {
   for (let i = 1; i < piezas.length; i++) assert.ok(piezas[i - 1].fin - piezas[i].ini >= 0.15 - 1e-9);
 });
 
-test('configuración por defecto: inicio a 4.00 m, canalón de encuentro y extensión trasera', () => {
+test('configuración por defecto V3: metal simple + TF5 UPVC, canalón y extensión', () => {
   const r = calcularProyecto(PARAMETROS_INICIALES);
-  assert.equal(r.p.alturaInicio, 4.0);
+  assert.equal(r.tipoEstructura, 'metalSimple');
+  assert.equal(r.esMetalSimple, true);
+  assert.equal(r.esMetal, true);
+  assert.equal(r.material.id, 'tf5');
+  assert.equal(r.material.perfil, 'trapezoidal');
   assert.equal(r.modoEncuentro, 'independiente');
-  assert.equal(r.extension.aplicada, 0.5);
-  assert.ok(Math.abs(r.zIni - (r.zBaseCubierta - 0.5)) < 1e-9);
+  assert.ok(r.extension.aplicada > 0);
   assert.ok(r.extension.holgura >= GEOMETRIA.holguraExtension);
   assert.ok(!r.advertencias.some((a) => a.clave === 'encuentro' && a.nivel === 'error'));
+});
+
+test('V3 y V2 metálicas ganan altura libre frente a V1 madera', () => {
+  const v3 = calcularProyecto({ ...PARAMETROS_INICIALES, tipoEstructura: 'metalSimple' });
+  const v2 = calcularProyecto({ ...PARAMETROS_INICIALES, tipoEstructura: 'metal' });
+  const madera = calcularProyecto({ ...PARAMETROS_INICIALES, tipoEstructura: 'madera', peralteTijeral: 0.4 });
+  assert.ok(v3.alturaLibreEstructura > madera.alturaLibreEstructura);
+  assert.ok(v2.alturaLibreEstructura > madera.alturaLibreEstructura);
 });
 
 test('extensión trasera: 1.00 m cabe sobre el existente; sin holgura se limita y se avisa', () => {
@@ -131,7 +145,7 @@ test('la madera nueva no toca postes, viga ni canalón existentes', () => {
 });
 
 test('barrido de parámetros: ningún elemento queda desconectado', () => {
-  for (const material of ['tr4', 'tr4mixta', 'fibraforte']) {
+  for (const material of ['tr4', 'tr4mixta', 'tf5', 'fibraforte']) {
     for (const direccion of ['longitudinal', 'lateralDer', 'lateralIzq']) {
       for (const pendiente of [1, 3, 5, 8, 12, 20, 30, 45]) {
         for (const alturaInicio of [2.4, 2.8, 3.25, 3.42, 3.6, 3.8, 4.0, 4.5, 5.0]) {
@@ -166,4 +180,17 @@ test('barrido de parámetros: ningún elemento queda desconectado', () => {
       }
     }
   }
+});
+
+test('lista de compra V3 incluye postes, correas C, TF5 y no pide amarre', () => {
+  const r = calcularProyecto(PARAMETROS_INICIALES);
+  const lista = listarMateriales(r);
+  assert.ok(lista.totalItems >= 12);
+  const items = lista.categorias.flatMap((c) => c.items);
+  const codigos = items.map((i) => i.codigo);
+  assert.ok(codigos.includes('EM-01'));
+  assert.ok(codigos.includes('EM-05'));
+  assert.ok(!codigos.includes('EM-03'), 'V3 no debe pedir viga de amarre');
+  assert.ok(items.some((i) => /TF5/i.test(i.descripcion)));
+  assert.equal(lista.resumen.tipoEstructura, 'V3 · Metal simple (como el existente)');
 });

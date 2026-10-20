@@ -5,7 +5,7 @@
  *
  * Toda altura `altura(x, z)` es la cara superior de la plancha (crestas del perfil).
  */
-import { MATERIALES, SECCIONES, GEOMETRIA, REGIMENES_LLUVIA, DIRECCIONES } from '../config/proyecto.js';
+import { MATERIALES, GEOMETRIA, REGIMENES_LLUVIA, DIRECCIONES, seccionesDe, TIPOS_ESTRUCTURA, esTipoMetal } from '../config/proyecto.js';
 
 const EPS = 1e-6;
 /** Por debajo de esta cota del cordón inferior no caben pies de amigo ni bases (m). */
@@ -125,6 +125,10 @@ function esTraslucida(patron, k, n) {
 export function calcularProyecto(p) {
   const G = GEOMETRIA;
   const mat = MATERIALES[p.material];
+  const tipoEst = TIPOS_ESTRUCTURA[p.tipoEstructura] ? p.tipoEstructura : 'metalSimple';
+  const S = seccionesDe(tipoEst);
+  const esMetal = esTipoMetal(tipoEst);
+  const esMetalSimple = tipoEst === 'metalSimple';
   const W = p.ancho;
   const L = p.largo;
   const s = p.pendiente / 100;
@@ -163,9 +167,9 @@ export function calcularProyecto(p) {
 
   // --- Extensión trasera (solo cubierta, por encima del existente) -------------------
   // Profundidad bajo la cara superior de la plancha de lo que vuela: correas (+ largueros) o tapacán.
-  const hC = SECCIONES.correa.h;
-  const hL = SECCIONES.larguero.h;
-  const profundidadVuelo = perfil + Math.max(hC + (esLong ? hL : 0), SECCIONES.tapacan.h);
+  const hC = S.correa.h;
+  const hL = S.larguero.h;
+  const profundidadVuelo = perfil + Math.max(hC + (esLong ? hL : 0), S.tapacan.h);
   const yCanalonEncuentro = ex.hFin - 0.05;
   const zFinCanalonEncuentro = G.canalonEncuentro.z + G.canalonEncuentro.ancho / 2;
   /** Cota superior de lo existente (planchas, borde o canalón de encuentro) en z. */
@@ -237,8 +241,9 @@ export function calcularProyecto(p) {
   const separacionPorticos = porticos.length > 1 ? porticos[1] - porticos[0] : 0;
   const voladizoTrasero = porticos[0] - zApoyo;
   const xPoste = W / 2 - G.margenPoste;
-  const peralte = p.peralteTijeral;
-  /** Cara superior del cordón superior del tijeral en (x, z). */
+  // Metal: canto del tubo; V3 longitudinal usa el larguero como viga principal; madera: tijeral.
+  const peralte = esMetal ? (esMetalSimple && esLong ? S.larguero.h : S.cordon.h) : p.peralteTijeral;
+  /** Cara superior de la viga / cordón superior en (x, z). */
   const cordonSuperior = (x, z) => (esLong ? altura(0, z) - perfil - hC - hL : altura(x, z) - perfil - hC);
   const cordonInferior = (x, z) => cordonSuperior(x, z) - peralte;
 
@@ -333,6 +338,11 @@ export function calcularProyecto(p) {
   const resultado = {
     p,
     material: mat,
+    tipoEstructura: tipoEst,
+    tipoEstructuraInfo: TIPOS_ESTRUCTURA[tipoEst],
+    esMetal,
+    esMetalSimple,
+    secciones: S,
     regimen: REGIMENES_LLUVIA[p.regimen],
     direccion: DIRECCIONES[p.direccion],
     esLong,
@@ -425,10 +435,11 @@ export function evaluarAdvertencias(r) {
     });
   }
   if (r.alturaLibreEstructura < p.alturaLibreMin) {
+    const bajo = r.esMetal ? 'bajo las vigas de pórtico' : 'bajo tijerales';
     out.push({
       nivel: 'error',
       clave: 'alturaLibre',
-      texto: `Altura libre bajo tijerales ${f(r.alturaLibreEstructura)} m < mínimo provisional ${f(p.alturaLibreMin)} m (pórtico en z = ${f(r.puntoCritico.z)} m).`,
+      texto: `Altura libre ${bajo} ${f(r.alturaLibreEstructura)} m < mínimo provisional ${f(p.alturaLibreMin)} m (pórtico en z = ${f(r.puntoCritico.z)} m).`,
     });
   }
   if (r.alturaBajoPlanchaFinal < p.alturaLibreMin) {
@@ -563,7 +574,7 @@ export function evaluarAdvertencias(r) {
     out.push({
       nivel: 'aviso',
       clave: 'porticos',
-      texto: `Separación entre pórticos ${f(r.separacionPorticos)} m: luz grande para correas de madera.`,
+      texto: `Separación entre pórticos ${f(r.separacionPorticos)} m: luz grande para ${r.esMetal ? 'correas C metálicas' : 'correas de madera'}.`,
     });
   }
   if (mat.traslucida && p.traslucidas !== 'ninguna' && r.nTraslucidas > 0) {

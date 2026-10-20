@@ -1,6 +1,18 @@
 # Sobrecubierta provisional para terraza · modelo 3D de estudio
 
-Aplicación web (Vite + Three.js) que modela una sobrecubierta provisional de madera para una terraza de concreto de **6.00 × 11.50 m (≈69 m²)**, enlazada con el sobretecho metálico existente.
+Aplicación web (Vite + Three.js) que modela una sobrecubierta provisional para una terraza de concreto de **6.00 × 11.50 m (≈69 m²)**, enlazada con el sobretecho metálico existente.
+
+Hay tres versiones de estructura (conmutables en el panel) y la cubierta predeterminada es **Fibraforte TF5 UPVC blanco** + traslúcido TF5:
+
+| Versión | Estructura | Notas |
+| --- | --- | --- |
+| **V3 (default)** | Metal simple: postes + vigas soldadas en cabeza + correas C; **sin vigas de amarre** | Como el sobretecho existente: más barata, menos rígida |
+| **V2** | Metal con amarre longitudinal, pies de amigo y cruces | Más rígida y más cara |
+| **V1** | Madera con tijeral | Estudio inicial |
+
+Cubierta default: [TF5 Termoacústico UPVC Blanco 3.60×1.07](https://fibraforte.com/product/fibraforte-tf5-termoacustico-upvc-blanco-3-60-m-x-1-07-m/) + [TF5 Traslúcido](https://fibraforte.com/product/fibraforte-tf5-trapezoidal-3-60-m-x-1-07-m/).
+
+El panel derecho tiene la pestaña **Lista de compra** (secciones, barras de 6 m, planchas TF5, tornillería, drenaje) y un botón para copiar a Excel.
 
 Su objetivo no es mostrar la cubierta más bonita. Sirve para discutir con un maestro de obra, un carpintero o un ingeniero una solución económica, y para **hacer visibles los conflictos** entre pendiente, altura libre, impermeabilidad y estructura.
 

@@ -2,13 +2,13 @@
   "name": "techo-terraza-3d",
   "private": true,
   "version": "1.0.0",
-  "description": "Modelo 3D interactivo de una sobrecubierta provisional de madera para la terraza",
+  "description": "Modelo 3D interactivo de sobrecubierta provisional (V2 metal / V1 madera) para la terraza",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/calc/"
+    "test": "node --test src/calc/*.test.js"
   },
   "dependencies": {
     "three": "^0.186.1"

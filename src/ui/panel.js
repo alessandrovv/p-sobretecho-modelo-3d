@@ -4,6 +4,7 @@ import {
   DIRECCIONES,
   PATRONES_TRASLUCIDAS,
   ALTERNATIVAS,
+  TIPOS_ESTRUCTURA,
 } from '../config/proyecto.js';
 
 const $ = (sel, raiz = document) => raiz.querySelector(sel);
@@ -39,6 +40,20 @@ export function crearPanel({ estado, capas, alCambiar, alCambiarCapas, alRestabl
   llenarSelect($('#sel-regimen'), Object.entries(REGIMENES_LLUVIA).map(([k, v]) => [k, v.nombre]));
   llenarSelect($('#sel-traslucidas'), Object.entries(PATRONES_TRASLUCIDAS));
   llenarSelect($('#sel-direccion'), Object.entries(DIRECCIONES).map(([k, v]) => [k, v.nombre]));
+
+  // Versiones de estructura (V1 madera / V2 metal)
+  const contVersiones = $('#versiones-estructura');
+  for (const tipo of Object.values(TIPOS_ESTRUCTURA)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.tipoEstructura = tipo.id;
+    b.innerHTML = `${tipo.nombre}${tipo.id === 'metalSimple' ? ' <span class="insignia insignia-calculado">default</span>' : ''}<small>${tipo.descripcion}</small>`;
+    b.addEventListener('click', () => {
+      estado.tipoEstructura = tipo.id;
+      alCambiar('tipoEstructura');
+    });
+    contVersiones.append(b);
+  }
 
   // Alternativas
   const lista = $('#alternativas');
@@ -134,7 +149,38 @@ export function crearPanel({ estado, capas, alCambiar, alCambiarCapas, alRestabl
 
     const activa = alternativaActiva(estado);
     for (const b of $$('[data-alternativa]')) b.classList.toggle('activa', b.dataset.alternativa === activa?.id);
+    for (const b of $$('[data-tipo-estructura]')) b.classList.toggle('activa', b.dataset.tipoEstructura === estado.tipoEstructura);
     for (const el of $$('[data-capa]')) el.checked = !!capas[el.dataset.capa];
+
+    const campoPeralte = $('#campo-peralte');
+    const inputPeralte = $('[data-param="peralteTijeral"]');
+    if (campoPeralte && inputPeralte) {
+      const soloMadera = estado.tipoEstructura === 'madera';
+      inputPeralte.disabled = !soloMadera;
+      campoPeralte.classList.toggle('deshabilitado', !soloMadera);
+      campoPeralte.title = soloMadera ? '' : 'En V2 metálica el canto lo fija el tubo (100×50 mm); no hay tijeral profundo.';
+    }
+    const nota = $('#nota-version');
+    if (nota) nota.textContent = TIPOS_ESTRUCTURA[estado.tipoEstructura]?.descripcion ?? '';
+
+    const leyenda = $('#leyenda-estructura');
+    if (leyenda) {
+      leyenda.innerHTML =
+        estado.tipoEstructura === 'madera'
+          ? '<i style="background:#b08550"></i>Madera tratada'
+          : '<i style="background:#6a7278"></i>Tubo metálico';
+    }
+    const leyendaPl = $('#leyenda-plancha');
+    if (leyendaPl) {
+      const mat = MATERIALES[estado.material];
+      if (mat?.id === 'tf5') {
+        leyendaPl.innerHTML = '<i style="background:#f2f4f6;border:1px solid #bbb"></i>TF5 UPVC blanco';
+      } else if (mat?.id === 'fibraforte') {
+        leyendaPl.innerHTML = '<i style="background:#9a3d31"></i>Fibraforte opaca';
+      } else {
+        leyendaPl.innerHTML = '<i style="background:#c5cad0"></i>Plancha opaca';
+      }
+    }
   }
 
   return { sincronizar, aplicarAlternativa };

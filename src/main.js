@@ -16,7 +16,7 @@ import { construirAnotaciones, animarFlechas } from './builders/anotaciones.js';
 import { vaciar } from './utils/geometria3d.js';
 import { crearPanel } from './ui/panel.js';
 import { definirVistas, GestorVistas } from './ui/vistas.js';
-import { renderInforme, renderEstado, renderComparacion, renderMateriales } from './ui/informe.js';
+import { renderInforme, renderEstado, renderComparacion, renderMateriales, renderListaCompra } from './ui/informe.js';
 
 // --- Renderizador, escena y cámara -------------------------------------------------------
 const contenedor = document.getElementById('viewport');
@@ -144,6 +144,7 @@ function reconstruir() {
   aplicarCapas();
   panel.sincronizar(r);
   renderInforme(r, document.getElementById('informe'));
+  renderListaCompra(r, document.getElementById('lista-compra'));
   renderEstado(r, document.getElementById('estado-flotante'));
   window.__techo = { escena, camara, muros, estado, capas, resultado: r, vistas, irA, ready: true };
 }
@@ -211,6 +212,20 @@ document.querySelectorAll('[data-vista]').forEach((b) => b.addEventListener('cli
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, select, textarea')) return;
   if (e.key === 'r' || e.key === 'R') irA('iso');
+});
+
+// Pestañas del panel derecho: Resultados | Lista de compra
+document.querySelectorAll('[data-pestana]').forEach((b) => {
+  b.addEventListener('click', () => {
+    const id = b.dataset.pestana;
+    document.querySelectorAll('[data-pestana]').forEach((x) => {
+      x.classList.toggle('activa', x === b);
+      x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-panel-pestana]').forEach((p) => {
+      p.hidden = p.dataset.panelPestana !== id;
+    });
+  });
 });
 
 const dlgComparar = document.getElementById('dlg-comparar');

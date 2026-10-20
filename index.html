@@ -16,7 +16,13 @@
         </header>
 
         <section class="bloque">
-          <h2>Alternativa</h2>
+          <h2>Versión de estructura</h2>
+          <div id="versiones-estructura" class="lista-versiones" role="tablist" aria-label="Versión de estructura"></div>
+          <p class="nota-campo" id="nota-version">V3: metal simple como el existente (sin amarre). Cubierta TF5 UPVC blanco por defecto.</p>
+        </section>
+
+        <section class="bloque">
+          <h2>Alternativa de cubierta</h2>
           <div id="alternativas" class="lista-alternativas"></div>
           <div class="fila-botones">
             <button type="button" id="btn-comparar">Comparar alternativas</button>
@@ -105,7 +111,7 @@
           <label class="campo rango">Vanos entre pórticos <output data-salida="vanos"></output>
             <input type="range" data-param="vanos" data-dec="0" min="3" max="8" step="1" />
           </label>
-          <label class="campo rango">Peralte del tijeral <output data-salida="peralteTijeral"></output>
+          <label class="campo rango" id="campo-peralte">Peralte del tijeral (solo V1 madera) <output data-salida="peralteTijeral"></output>
             <input type="range" data-param="peralteTijeral" data-unidad="m" min="0.25" max="0.8" step="0.01" />
           </label>
           <label class="campo rango">Separación de correas <output data-salida="separacionCorreas"></output>
@@ -155,8 +161,8 @@
         </nav>
         <div class="estado-flotante" id="estado-flotante"></div>
         <div class="leyenda" aria-label="Leyenda">
-          <span><i style="background:#b08550"></i>Madera tratada</span>
-          <span><i style="background:#c5cad0"></i>Plancha opaca</span>
+          <span id="leyenda-estructura"><i style="background:#6a7278"></i>Tubo metálico</span>
+          <span id="leyenda-plancha"><i style="background:#f2f4f6;border:1px solid #bbb"></i>TF5 UPVC blanco</span>
           <span><i style="background:#dff0ff;border:1px solid #9bb"></i>Traslúcida</span>
           <span><i style="background:#5f7f9c"></i>Remates y baberos</span>
           <span><i style="background:#8d949a"></i>Existente</span>
@@ -166,7 +172,12 @@
 
       <aside class="panel panel-informe" id="panel-informe" aria-label="Resultados">
         <button type="button" class="cerrar-panel" data-cerrar="panel-informe" aria-label="Cerrar panel">×</button>
-        <div id="informe"></div>
+        <div class="pestanas-informe" role="tablist">
+          <button type="button" class="pestana activa" data-pestana="resultados" role="tab" aria-selected="true">Resultados</button>
+          <button type="button" class="pestana" data-pestana="compra" role="tab" aria-selected="false">Lista de compra</button>
+        </div>
+        <div id="informe" data-panel-pestana="resultados"></div>
+        <div id="lista-compra" data-panel-pestana="compra" hidden></div>
       </aside>
     </div>
 

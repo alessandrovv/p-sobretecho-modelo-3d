@@ -150,6 +150,8 @@ export function crearMateriales(renderer) {
     puerta: new THREE.MeshStandardMaterial({ color: 0x5a4636, roughness: 0.8 }),
     madera: new THREE.MeshStandardMaterial({ map: texturaMadera(anisotropy), roughness: 0.82 }),
     aceroExistente: new THREE.MeshStandardMaterial({ color: COLORES.aceroExistente, metalness: 0.6, roughness: 0.45 }),
+    /** Estructura nueva V2: tubo galvanizado / negro pintado, algo más claro que el existente. */
+    aceroNuevo: new THREE.MeshStandardMaterial({ color: 0x6a7278, metalness: 0.72, roughness: 0.38 }),
     chapaExistente: new THREE.MeshStandardMaterial({
       color: COLORES.chapaExistente,
       metalness: 0.65,
@@ -171,6 +173,13 @@ export function crearMateriales(renderer) {
       side: THREE.DoubleSide,
     }),
     fibraforte: new THREE.MeshStandardMaterial({ color: 0x9a3d31, roughness: 0.62, side: THREE.DoubleSide }),
+    /** TF5 UPVC blanco termoacústico: refleja más que el rojo. */
+    tf5: new THREE.MeshStandardMaterial({
+      color: 0xf2f4f6,
+      roughness: 0.55,
+      metalness: 0.05,
+      side: THREE.DoubleSide,
+    }),
     traslucidaTR4: new THREE.MeshPhysicalMaterial({
       color: 0xdff0ff,
       roughness: 0.18,
@@ -188,6 +197,15 @@ export function crearMateriales(renderer) {
       opacity: 0.42,
       side: THREE.DoubleSide,
       depthWrite: false,
+    }),
+    traslucidaTF5: new THREE.MeshPhysicalMaterial({
+      color: 0xf7fbff,
+      roughness: 0.28,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      clearcoat: 0.35,
     }),
     remate: new THREE.MeshStandardMaterial({ color: COLORES.remate, metalness: 0.45, roughness: 0.4, side: THREE.DoubleSide }),
     cierre: new THREE.MeshStandardMaterial({ color: COLORES.cierre, roughness: 0.95 }),
@@ -216,6 +234,7 @@ export function crearMateriales(renderer) {
 
 /** Material de plancha opaca según el material de cubierta elegido. */
 export function materialPlancha(materiales, material, traslucida) {
+  if (material.id === 'tf5') return traslucida ? materiales.traslucidaTF5 : materiales.tf5;
   if (material.id === 'fibraforte') return traslucida ? materiales.traslucidaFibraforte : materiales.fibraforte;
   return traslucida ? materiales.traslucidaTR4 : materiales.aluzinc;
 }

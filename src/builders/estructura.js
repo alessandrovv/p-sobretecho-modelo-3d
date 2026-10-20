@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { Colector } from '../utils/geometria3d.js';
 import { repartir } from '../calc/geometria.js';
-import { SECCIONES, GEOMETRIA } from '../config/proyecto.js';
+import { GEOMETRIA } from '../config/proyecto.js';
+import { construirEstructuraMetal } from './estructuraMetal.js';
+import { construirEstructuraMetalSimple } from './estructuraMetalSimple.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -12,14 +14,20 @@ export function normalCubierta(r) {
   return V(r.eje.signo * s, 1, 0).multiplyScalar(cosA);
 }
 
-/**
- * Estructura provisional de madera. Todas las piezas se apoyan en la anterior:
- * base → poste → tijeral → (largueros) → correas → planchas, de modo que al
- * cambiar la pendiente nada queda flotando. Secciones: SECCIONES (sin cálculo).
- */
+/** Elige el builder: V3 metal simple · V2 metal con amarre · V1 madera. */
 export function construirEstructura(r, materiales) {
+  if (r.esMetalSimple) return construirEstructuraMetalSimple(r, materiales);
+  if (r.esMetal) return construirEstructuraMetal(r, materiales);
+  return construirEstructuraMadera(r, materiales);
+}
+
+/**
+ * Estructura provisional de madera (V1). Todas las piezas se apoyan en la anterior:
+ * base → poste → tijeral → (largueros) → correas → planchas.
+ */
+export function construirEstructuraMadera(r, materiales) {
   const { porticos, xPoste, altura, perfil } = r;
-  const S = SECCIONES;
+  const S = r.secciones;
   const c = new Colector(materiales);
   const n = normalCubierta(r);
   const etiquetas = [];
